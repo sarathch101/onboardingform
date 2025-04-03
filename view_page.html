@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Viewer</title>
+    <style>
+        .folder { font-weight: bold; cursor: pointer; color: blue; margin: 5px 0; }
+        .hidden { display: none; }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px gray;
+            z-index: 1000;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+        .popup-content {
+            padding: 10px;
+        }
+        .close {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .download-btn {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .download-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Application Workspaces & Onboarding Forms</h2>
+        <div id="directories"></div>
+    </div>
+
+    <script>
+        // Fetch directories when the page loads
+        document.addEventListener("DOMContentLoaded", fetchDirectories);
+
+        async function fetchDirectories() {
+            try {
+                const response = await fetch("http://localhost:3000/get-directories");
+                const data = await response.json();
+                console.log("Received Directories:", data);
+
+                const directoryContainer = document.getElementById("directories");
+                directoryContainer.innerHTML = "";
+
+                data.forEach(row => {
+                    const div = document.createElement("div");
+                    div.classList.add("folder");
+                    div.innerText = `📁 ${row.application_directory}`;
+                    div.onclick = () => fetchNames(row.application_directory, div);
+                    directoryContainer.appendChild(div);
+                });
+            } catch (error) {
+                console.error("Error fetching directories:", error);
+            }
+        }
+
+        async function fetchNames(directory, folderElement) {
+    try {
+        // ✅ Fetch latest application owner & support DL
+        const latestResponse = await fetch(`http://localhost:3000/get-latest-form/${encodeURIComponent(directory)}`);
+        const latestData = await latestResponse.json();
+        console.log(`Latest Data for ${directory}:`, latestData);
+
+        // ✅ Fetch names
+        const response = await fetch(`http://localhost:3000/get-names/${encodeURIComponent(directory)}`);
+        const data = await response.json();
+        console.log(`Received Names for ${directory}:`, data);
+
+        let nameContainer = folderElement.nextElementSibling;
+
+        if (nameContainer && nameContainer.classList.contains("name-list")) {
+            nameContainer.classList.toggle("hidden");
+            return;
+        }
+
+        nameContainer = document.createElement("div");
+        nameContainer.classList.add("name-list");
+
+        // ✅ Display latest App Owner & Support DL at the top
+        const latestInfoDiv = document.createElement("div");
+        latestInfoDiv.innerHTML = `
+            <p><strong>App Owner:</strong> ${latestData.app_owner || "N/A"}</p>
+            <p><strong>App Support DL:</strong> ${latestData.app_support_dl || "N/A"}</p>
+            <hr>
+        `;
+        nameContainer.appendChild(latestInfoDiv);
+
+        // ✅ Display list of forms below
+        data.forEach(row => {
+            const nameDiv = document.createElement("div");
+            nameDiv.innerHTML = `
+                <a href="#" onclick="fetchDetails(${row.id})">${row.name}</a>
+            `;
+            nameContainer.appendChild(nameDiv);
+        });
+
+        folderElement.after(nameContainer);
+    } catch (error) {
+        console.error("Error fetching names:", error);
+    }
+}
+
+
+async function fetchDetails(id) {
+    try {
+        const response = await fetch(`http://localhost:3000/get-data/${id}`);
+        const data = await response.json();
+
+        // ✅ Display details in the popup
+        const popup = document.getElementById("popup");
+        document.getElementById("popupContent").innerHTML = `
+            <p><strong>Application Workspace:</strong> ${data.application_directory}</p>
+            <p><strong>App Owner:</strong> ${data.app_owner}</p>
+            <p><strong>App Support DL:</strong> ${data.app_support_dl}</p>
+            <p><strong>Flow Name:</strong> ${data.name}</p>
+            <p><strong>Requested by (Email):</strong> ${data.email}</p>
+            <p><strong>Comments:</strong> ${data.message}</p>
+            <hr>
+            <button onclick="downloadFormData(${id})" class="download-btn">Download</button>
+            <button onclick="closePopup()">Close</button>
+        `;
+        popup.style.display = "block";
+    } catch (error) {
+        console.error("Error fetching details:", error);
+    }
+}
+
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+        }
+
+        // Function to download form data as JSON
+        async function downloadFormData(id) {
+            try {
+                const response = await fetch(`http://localhost:3000/get-data/${id}`);
+                const data = await response.json();
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `form_data_${id}.json`;
+                a.click();
+            } catch (error) {
+                console.error("Error downloading form data:", error);
+            }
+        }
+    </script>
+
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closePopup()">&times;</span>
+            <div id="popupContent"></div>
+        </div>
+    </div>
+</body>
+</html>
