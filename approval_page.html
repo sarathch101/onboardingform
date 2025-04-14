@@ -32,7 +32,15 @@
 
 async function fetchPendingForms() {
   try {
-    const response = await fetch(`${BASE_URL}/get-pending-forms`);
+    const response = await fetch(`${BASE_URL}/get-pending-forms`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      mode: "cors"
+    });
+
     console.log("Response status:", response.status);
 
     const text = await response.text();
