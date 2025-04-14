@@ -1,0 +1,94 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #f6f8fa;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  padding: 20px;
+  gap: 20px;
+}
+
+.sidebar {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.05);
+}
+
+.sidebar h2 {
+  margin-bottom: 10px;
+}
+
+#searchInput {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.folder {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background: #e7f1ff;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.folder-label {
+  margin-left: 8px;
+  font-weight: bold;
+}
+
+.toggle-icon {
+  width: 20px;
+}
+
+.name-list {
+  background: #f0f4ff;
+  padding: 10px;
+  margin: 8px 0 16px 20px;
+  border-left: 3px solid #6ca0dc;
+  border-radius: 4px;
+}
+
+.name-list.hidden {
+  display: none;
+}
+
+.name-list div a {
+  display: block;
+  color: #007bff;
+  text-decoration: none;
+  margin: 5px 0;
+}
+
+.name-list div a:hover {
+  text-decoration: underline;
+}
+
+.form-details {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.05);
+}
+
+.download-btn {
+  margin-top: 15px;
+  padding: 8px 14px;
+  background-color: #007bff;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.download-btn:hover {
+  background-color: #0056b3;
+}

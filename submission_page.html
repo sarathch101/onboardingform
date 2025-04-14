@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Submission</title>
+  <link rel="stylesheet" href="./submission_page_styles.css" />
+</head>
+<body>
+  <!-- Container for the form -->
+  <div class="form-container">
+    <h2>NiFi Onboarding Submission Form</h2>
+
+    <!-- Submission Form -->
+    <form id="dataForm" enctype="multipart/form-data">
+      
+      <!-- Application Directory Selector -->
+      <label for="application_directory">Application Workspace:</label>
+      <select id="application_directory" name="application_directory" required onchange="toggleCustomDirectory()">
+        <option value="">Select Directory</option>
+        <option value="other">Other (Enter New Value)</option>
+      </select>
+
+      <!-- Custom Directory Input (initially hidden) -->
+      <input type="text" id="customDirectory" class="hidden" placeholder="Enter new directory" />
+
+      <!-- Owner and Support Info -->
+      <label for="app_owner">Application Owner:</label>
+      <input type="text" id="app_owner" name="app_owner" required />
+
+      <label for="app_support_dl">Application Support DL:</label>
+      <input type="email" id="app_support_dl" name="app_support_dl" required />
+
+      <!-- Flow and Email Info -->
+      <label for="name">Flow Name:</label>
+      <input type="text" id="name" name="name" required />
+
+      <label for="email">Requested by (Email):</label>
+      <input type="email" id="email" name="email" required />
+
+      <!-- Comments and Attachments -->
+      <label for="message">Comments:</label>
+      <textarea id="message" name="message" required></textarea>
+
+      <label for="attachment">Attachment:</label>
+      <input type="file" id="attachment" name="attachment" />
+
+      <!-- Form Action Buttons -->
+      <div class="button-group">
+        <button type="submit">Submit</button>
+        <button type="button" onclick="downloadFormData()">Download</button>
+        <button type="button" onclick="document.getElementById('fileInput').click()">Upload</button>
+        <button type="button" id="resetBtn" onclick="resetForm()">Reset</button>
+      </div>
+
+      <!-- Hidden file input for uploading -->
+      <input type="file" id="fileInput" class="file-input hidden" accept=".json" onchange="uploadFormData()" />
+    </form>
+
+    <!-- Message Output -->
+    <p id="responseMessage"></p>
+  </div>
+
+  <!-- Include Scripts -->
+  <script>
+const BASE_URL = "http://localhost:5410"; // Change this for prod/dev
+
+document.addEventListener("DOMContentLoaded", async function () {
+    const form = document.getElementById("dataForm");
+
+
+    form.onsubmit = function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+};
+
+    form.addEventListener("submit", async function (event) {
+        console.log("Form submit triggered");
+        event.preventDefault();
+        event.stopPropagation();
+
+        const messageElem = document.getElementById("responseMessage");
+        messageElem.textContent = "Processing...";
+        messageElem.style.color = "blue";
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch(`${BASE_URL}/submit-form`, {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                messageElem.textContent = "Form submitted successfully!";
+                messageElem.style.color = "green";
+
+                setTimeout(() => {
+                    messageElem.textContent = "";
+                    resetForm();
+                }, 4000);
+            } else {
+                messageElem.textContent = "Error: " + result.message;
+                messageElem.style.color = "red";
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error);
+            messageElem.textContent = "Submission failed!";
+            messageElem.style.color = "red";
+        }
+    });
+
+    // ✅ Now include your directory + form preload logic here too
+    await loadApplicationDirectories();
+
+    const formId = localStorage.getItem("editFormId");
+    if (formId) {
+        localStorage.removeItem("editFormId");
+        loadFormData(formId);
+    }
+});
+
+
+    async function loadApplicationDirectories() {
+        try {
+            const response = await fetch(`${BASE_URL}/get-directories`);
+            const directories = await response.json();
+
+            const dropdown = document.getElementById("application_directory");
+            dropdown.innerHTML = "<option value=''>Select Directory</option><option value='other'>Other (Enter New Value)</option>";
+
+            directories.forEach(dir => {
+                const option = document.createElement("option");
+                option.value = dir.application_directory;
+                option.textContent = dir.application_directory;
+                dropdown.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error("Error loading directories:", error);
+        }
+    }
+
+    async function loadFormData(id) {
+        if (!id) return;
+
+        try {
+            const response = await fetch(`${BASE_URL}/get-form-details/${id}`);
+            const data = await response.json();
+
+            document.getElementById("app_owner").value = data.app_owner || "";
+            document.getElementById("app_support_dl").value = data.app_support_dl || "";
+            document.getElementById("name").value = data.name || "";
+            document.getElementById("email").value = data.email || "";
+            document.getElementById("message").value = data.message || "";
+
+            // Wait for directories to load before selecting the correct option
+            const dropdown = document.getElementById("application_directory");
+            const customDirectoryInput = document.getElementById("customDirectory");
+
+            let interval = setInterval(() => {
+                if (dropdown.options.length > 1) { // Ensure dropdown is populated
+                    clearInterval(interval);
+
+                    let existsInDropdown = [...dropdown.options].some(option => option.value === data.application_directory);
+
+                    if (existsInDropdown) {
+                        dropdown.value = data.application_directory;
+                        customDirectoryInput.style.display = "none";
+                        customDirectoryInput.required = false;
+                        customDirectoryInput.value = "";
+                    } else {
+                        dropdown.value = "other";
+                        customDirectoryInput.style.display = "block";
+                        customDirectoryInput.required = true;
+                        customDirectoryInput.value = data.application_directory || "";
+                    }
+                }
+            }, 100); // Check every 100ms until directories are loaded
+
+        } catch (error) {
+            console.error("Error loading form data:", error);
+        }
+    }
+
+    async function toggleCustomDirectory() {
+    const dropdown = document.getElementById("application_directory");
+    const customDirectoryInput = document.getElementById("customDirectory");
+    const appOwnerInput = document.getElementById("app_owner");
+    const appSupportDlInput = document.getElementById("app_support_dl");
+
+    if (dropdown.value === "other") {
+        customDirectoryInput.style.display = "block";
+        customDirectoryInput.required = true;
+        appOwnerInput.value = "";
+        appSupportDlInput.value = "";
+    } else {
+        customDirectoryInput.style.display = "none";
+        customDirectoryInput.required = false;
+        customDirectoryInput.value = ""; // Clear input if not needed
+        
+        // ✅ Only fetch data if a valid directory is selected
+        if (!dropdown.value) {
+           // console.warn("No directory selected, skipping fetch.");
+            return; 
+        }
+
+        const url = `${BASE_URL}/get-latest-form/${encodeURIComponent(dropdown.value)}`;
+        console.log("Fetching latest form data from:", url);
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("Latest form data:", data);
+
+            appOwnerInput.value = data.app_owner || "";
+            appSupportDlInput.value = data.app_support_dl || "";
+        } catch (error) {
+            console.error("Error fetching latest form data:", error);
+        }
+    }
+}
+
+        // Function to download form data as a JSON file
+        function downloadFormData() {
+            const application_directory = document.getElementById("application_directory").value === "other"
+                ? document.getElementById("customDirectory").value.trim()
+                : document.getElementById("application_directory").value;
+
+            const data = {
+                application_directory,
+                app_owner: document.getElementById("app_owner").value,
+                app_support_dl: document.getElementById("app_support_dl").value,
+                name: document.getElementById("name").value,
+                email: document.getElementById("email").value,
+                message: document.getElementById("message").value
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "form_data.json";
+            a.click();
+        }
+
+        // Function to upload a JSON file and fill the form
+	function uploadFormData() {
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const data = JSON.parse(event.target.result);
+            
+            const dropdown = document.getElementById("application_directory");
+            const customDirectoryInput = document.getElementById("customDirectory");
+            
+            // Check if the application_directory exists in the dropdown
+            let existsInDropdown = false;
+            for (let option of dropdown.options) {
+                if (option.value === data.application_directory) {
+                    existsInDropdown = true;
+                    break;
+                }
+            }
+
+            if (existsInDropdown) {
+                dropdown.value = data.application_directory;
+                customDirectoryInput.style.display = "none";
+                customDirectoryInput.required = false;
+                customDirectoryInput.value = "";
+            } else {
+                dropdown.value = "other";
+                customDirectoryInput.style.display = "block";
+                customDirectoryInput.required = true;
+                customDirectoryInput.value = data.application_directory || "";
+            }
+
+            document.getElementById("app_owner").value = data.app_owner || "";
+            document.getElementById("app_support_dl").value = data.app_support_dl || "";
+            document.getElementById("name").value = data.name || "";
+            document.getElementById("email").value = data.email || "";
+            document.getElementById("message").value = data.message || "";
+
+        } catch (error) {
+            alert("Invalid JSON file.");
+        }
+    };
+    reader.readAsText(file);
+}
+
+        // Function to reset the form fields
+        function resetForm() {
+            document.getElementById("dataForm").reset();
+          //  document.getElementById("responseMessage").innerHTML = "";
+            toggleCustomDirectory();
+        }
+
+  </script>
+</body>
+</html>

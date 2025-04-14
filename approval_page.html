@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pending Approvals</title>
+  <link rel="stylesheet" href="./approval_page_styles.css" />
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Pending Approvals</h2>
+    <input type="text" id="searchInput" placeholder="Search flow name..." />
+    <div id="pendingNames" class="pending-list"></div>
+  </div>
+
+  <div id="detailsSection" class="details-section">
+    <h3>Selected Form Details</h3>
+    <div id="popupContent"></div>
+    <div id="actionButtons" class="action-buttons" style="display: none;">
+      <button class="btn-approve" onclick="approveForm()">
+        ✅ Approve
+    </button>
+    <button class="btn-reject" onclick="rejectForm()">
+        ❌ Reject
+    </button>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = "http://localhost:5410";
+
+    async function fetchPendingForms() {
+      try {
+        const response = await fetch(`${BASE_URL}/get-pending-forms`);
+        const data = await response.json();
+        window.fullData = data;
+        renderPendingList(data);
+      } catch (error) {
+        console.error("Error fetching pending forms:", error);
+      }
+    }
+
+    function renderPendingList(data) {
+      const list = document.getElementById("pendingNames");
+      list.innerHTML = "";
+      if (data.length === 0) {
+        list.innerHTML = "<p>No pending forms found.</p>";
+        return;
+      }
+
+      data.forEach(row => {
+        const item = document.createElement("div");
+        item.classList.add("pending-item");
+        item.innerHTML = `
+          <span class="flow-name" onclick="showDetails(${row.id})">${row.name}</span>
+          <button class="edit-btn" onclick="editForm(event, ${row.id})">✏️ Edit</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    async function showDetails(id) {
+  try {
+    const response = await fetch(`${BASE_URL}/get-form-details/${id}`);
+    const data = await response.json();
+
+    document.getElementById("popupContent").innerHTML = `
+      <p><strong>Application Workspace:</strong> ${data.application_directory || "N/A"}</p>
+      <p><strong>App Owner:</strong> ${data.app_owner || "N/A"}</p>
+      <p><strong>Support DL:</strong> ${data.app_support_dl || "N/A"}</p>
+      <p><strong>Flow Name:</strong> ${data.name}</p>
+      <p><strong>Requested by:</strong> ${data.email}</p>
+      <p><strong>Comments:</strong> ${data.message || "N/A"}</p>
+      <input type="hidden" id="currentId" value="${data.id}">
+    `;
+
+    // Show buttons only after form is selected
+    document.getElementById("actionButtons").style.display = "block";
+    
+  } catch (error) {
+    console.error("Error fetching full details:", error);
+  }
+}
+
+
+
+
+    async function approveForm() {
+      const id = document.getElementById("currentId").value;
+      try {
+        await fetch(`${BASE_URL}/approve-form/${id}`, { method: "POST" });
+        alert("Form approved!");
+        fetchPendingForms();
+        document.getElementById("popupContent").innerHTML = "";
+      } catch (error) {
+        console.error("Error approving form:", error);
+      }
+    }
+
+    async function rejectForm() {
+      const id = document.getElementById("currentId").value;
+      try {
+        await fetch(`${BASE_URL}/reject-form/${id}`, { method: "POST" });
+        alert("Form rejected!");
+        fetchPendingForms();
+        document.getElementById("popupContent").innerHTML = "";
+      } catch (error) {
+        console.error("Error rejecting form:", error);
+      }
+    }
+
+    function editForm(event, id) {
+      event.stopPropagation();
+      localStorage.setItem("editFormId", id);
+      window.location.href = "submission_page.html";
+    }
+
+    document.getElementById("searchInput").addEventListener("input", function () {
+      const term = this.value.toLowerCase();
+      const filtered = window.fullData.filter(f => f.name.toLowerCase().includes(term));
+      renderPendingList(filtered);
+      document.getElementById("popupContent").innerHTML = "";
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+    fetchPendingForms();
+    document.getElementById("actionButtons").style.display = "none";
+  });
+
+  </script>
+</body>
+</html>
