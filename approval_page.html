@@ -73,9 +73,17 @@ async function fetchPendingForms() {
       });
     }
 
-    async function showDetails(id) {
+async function showDetails(id) {
   try {
-    const response = await fetch(`${BASE_URL}/get-form-details/${id}`);
+    const response = await fetch(`${BASE_URL}/get-form-details/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      mode: "cors"
+    });
+
     const data = await response.json();
 
     document.getElementById("popupContent").innerHTML = `
@@ -88,37 +96,50 @@ async function fetchPendingForms() {
       <input type="hidden" id="currentId" value="${data.id}">
     `;
 
-    // Show buttons only after form is selected
     document.getElementById("actionButtons").style.display = "block";
-    
+
   } catch (error) {
     console.error("Error fetching full details:", error);
   }
 }
 
-    async function approveForm() {
-      const id = document.getElementById("currentId").value;
-      try {
-        await fetch(`${BASE_URL}/approve-form/${id}`, { method: "POST" });
-        alert("Form approved!");
-        fetchPendingForms();
-        document.getElementById("popupContent").innerHTML = "";
-      } catch (error) {
-        console.error("Error approving form:", error);
-      }
-    }
+async function approveForm() {
+  const id = document.getElementById("currentId").value;
+  try {
+    await fetch(`${BASE_URL}/approve-form/${id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      mode: "cors"
+    });
+    alert("Form approved!");
+    fetchPendingForms();
+    document.getElementById("popupContent").innerHTML = "";
+  } catch (error) {
+    console.error("Error approving form:", error);
+  }
+}
 
-    async function rejectForm() {
-      const id = document.getElementById("currentId").value;
-      try {
-        await fetch(`${BASE_URL}/reject-form/${id}`, { method: "POST" });
-        alert("Form rejected!");
-        fetchPendingForms();
-        document.getElementById("popupContent").innerHTML = "";
-      } catch (error) {
-        console.error("Error rejecting form:", error);
-      }
-    }
+async function rejectForm() {
+  const id = document.getElementById("currentId").value;
+  try {
+    await fetch(`${BASE_URL}/reject-form/${id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      mode: "cors"
+    });
+    alert("Form rejected!");
+    fetchPendingForms();
+    document.getElementById("popupContent").innerHTML = "";
+  } catch (error) {
+    console.error("Error rejecting form:", error);
+  }
+}
 
     function editForm(event, id) {
       event.stopPropagation();
