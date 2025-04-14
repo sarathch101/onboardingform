@@ -88,10 +88,13 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         try {
             const response = await fetch(`${BASE_URL}/submit-form`, {
-                method: "POST",
-                body: formData
-            });
-
+  method: "POST",
+  body: formData,
+  headers: {
+    "ngrok-skip-browser-warning": "true"
+  },
+  mode: "cors"
+});
             const result = await response.json();
 
             if (response.ok) {
@@ -126,7 +129,14 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     async function loadApplicationDirectories() {
         try {
-            const response = await fetch(`${BASE_URL}/get-directories`);
+            const response = await fetch(`${BASE_URL}/get-directories`, {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true"
+  },
+  mode: "cors"
+});
             const directories = await response.json();
 
             const dropdown = document.getElementById("application_directory");
@@ -148,7 +158,14 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (!id) return;
 
         try {
-            const response = await fetch(`${BASE_URL}/get-form-details/${id}`);
+            const response = await fetch(`${BASE_URL}/get-form-details/${id}`, {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true"
+  },
+  mode: "cors"
+});
             const data = await response.json();
 
             document.getElementById("app_owner").value = data.app_owner || "";
@@ -208,7 +225,16 @@ document.addEventListener("DOMContentLoaded", async function () {
             return; 
         }
 
-        const url = `${BASE_URL}/get-latest-form/${encodeURIComponent(dropdown.value)}`;
+const response = await fetch(`${BASE_URL}/get-latest-form/${encodeURIComponent(dropdown.value)}`, {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true"
+  },
+  mode: "cors"
+});
+
+	    
         console.log("Fetching latest form data from:", url);
 
         try {
