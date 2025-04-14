@@ -193,14 +193,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     const appSupportDlInput = document.getElementById("app_support_dl");
 
     if (dropdown.value === "other") {
-        customDirectoryInput.style.display = "block";
-        customDirectoryInput.required = true;
-        appOwnerInput.value = "";
-        appSupportDlInput.value = "";
-    } else {
-        customDirectoryInput.style.display = "none";
-        customDirectoryInput.required = false;
-        customDirectoryInput.value = ""; // Clear input if not needed
+    customDirectoryInput.classList.remove("hidden");
+    customDirectoryInput.required = true;
+    appOwnerInput.value = "";
+    appSupportDlInput.value = "";
+	} else {
+    customDirectoryInput.classList.add("hidden");
+    customDirectoryInput.required = false;
+    customDirectoryInput.value = ""; // Clear input if not needed
         
         // ✅ Only fetch data if a valid directory is selected
         if (!dropdown.value) {
