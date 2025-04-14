@@ -27,145 +27,183 @@
 //    const BASE_URL = "http://localhost:5410";
     const BASE_URL = "https://main-precisely-calf.ngrok-free.app";
 
-    document.addEventListener("DOMContentLoaded", () => {
-      fetchDirectories();
+document.addEventListener("DOMContentLoaded", () => {
+  fetchDirectories();
 
-      document.getElementById("searchInput").addEventListener("input", function () {
-  const filter = this.value.toLowerCase();
-  document.querySelectorAll(".folder").forEach(folder => {
-    const match = folder.dataset.name.includes(filter);
-    folder.style.display = match ? "" : "none";
+  document.getElementById("searchInput").addEventListener("input", function () {
+    const filter = this.value.toLowerCase();
+    document.querySelectorAll(".folder").forEach(folder => {
+      const match = folder.dataset.name.includes(filter);
+      folder.style.display = match ? "" : "none";
 
-    // Collapse any expanded folder when searching
-    const nameList = folder.parentElement.querySelector(".name-list");
-    if (nameList && !nameList.classList.contains("hidden")) {
-      nameList.classList.add("hidden");
-      const icon = folder.querySelector(".toggle-icon");
-      if (icon) {
-        icon.innerHTML = `<i data-lucide="chevron-right"></i>`;
-        lucide.createIcons();
+      const nameList = folder.parentElement.querySelector(".name-list");
+      if (nameList && !nameList.classList.contains("hidden")) {
+        nameList.classList.add("hidden");
+        const icon = folder.querySelector(".toggle-icon");
+        if (icon) {
+          icon.innerHTML = `<i data-lucide="chevron-right"></i>`;
+          lucide.createIcons();
+        }
       }
-    }
+    });
   });
 });
 
+async function fetchDirectories() {
+  try {
+    const response = await fetch(`${BASE_URL}/get-directories`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      mode: "cors"
     });
 
-    async function fetchDirectories() {
-      try {
-        const response = await fetch(`${BASE_URL}/get-directories`);
-        const data = await response.json();
+    const data = await response.json();
 
-        const container = document.getElementById("directories");
-        container.innerHTML = "";
+    const container = document.getElementById("directories");
+    container.innerHTML = "";
 
-        data.forEach(row => {
-          const wrapper = document.createElement("div");
+    data.forEach(row => {
+      const wrapper = document.createElement("div");
 
-          const folder = document.createElement("div");
-          folder.classList.add("folder");
-          folder.dataset.name = row.application_directory.toLowerCase();
+      const folder = document.createElement("div");
+      folder.classList.add("folder");
+      folder.dataset.name = row.application_directory.toLowerCase();
 
-          const toggleIcon = document.createElement("span");
-          toggleIcon.className = "toggle-icon";
-          toggleIcon.innerHTML = `<i data-lucide="chevron-right"></i>`;
-          toggleIcon.onclick = () => fetchNames(row.application_directory, wrapper, toggleIcon);
+      const toggleIcon = document.createElement("span");
+      toggleIcon.className = "toggle-icon";
+      toggleIcon.innerHTML = `<i data-lucide="chevron-right"></i>`;
+      toggleIcon.onclick = () => fetchNames(row.application_directory, wrapper, toggleIcon);
 
-          const label = document.createElement("span");
-          label.className = "folder-label";
-          label.textContent = ` ${row.application_directory}`;
+      const label = document.createElement("span");
+      label.className = "folder-label";
+      label.textContent = ` ${row.application_directory}`;
 
-          folder.appendChild(toggleIcon);
-          folder.appendChild(label);
+      folder.appendChild(toggleIcon);
+      folder.appendChild(label);
 
-          wrapper.appendChild(folder);
-          container.appendChild(wrapper);
-        });
+      wrapper.appendChild(folder);
+      container.appendChild(wrapper);
+    });
 
-        lucide.createIcons();
-      } catch (error) {
-        console.error("Error fetching directories:", error);
-      }
+    lucide.createIcons();
+  } catch (error) {
+    console.error("Error fetching directories:", error);
+  }
+}
+
+async function fetchNames(directory, wrapper, toggleIcon) {
+  try {
+    const existing = wrapper.querySelector(".name-list");
+    if (existing) {
+      existing.classList.toggle("hidden");
+      toggleIcon.innerHTML = existing.classList.contains("hidden")
+        ? `<i data-lucide="chevron-right"></i>`
+        : `<i data-lucide="chevron-down"></i>`;
+      lucide.createIcons();
+      return;
     }
 
-    async function fetchNames(directory, wrapper, toggleIcon) {
-      try {
-        const existing = wrapper.querySelector(".name-list");
-        if (existing) {
-          existing.classList.toggle("hidden");
-          toggleIcon.innerHTML = existing.classList.contains("hidden") ? `<i data-lucide="chevron-right"></i>` : `<i data-lucide="chevron-down"></i>`;
-          lucide.createIcons();
-          return;
-        }
+    const [latestRes, namesRes] = await Promise.all([
+      fetch(`${BASE_URL}/get-latest-form/${encodeURIComponent(directory)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true"
+        },
+        mode: "cors"
+      }),
+      fetch(`${BASE_URL}/get-names/${encodeURIComponent(directory)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true"
+        },
+        mode: "cors"
+      })
+    ]);
 
-        const [latestRes, namesRes] = await Promise.all([
-          fetch(`${BASE_URL}/get-latest-form/${encodeURIComponent(directory)}`),
-          fetch(`${BASE_URL}/get-names/${encodeURIComponent(directory)}`)
-        ]);
+    const latestData = await latestRes.json();
+    const namesData = await namesRes.json();
 
-        const latestData = await latestRes.json();
-        const namesData = await namesRes.json();
+    const nameList = document.createElement("div");
+    nameList.classList.add("name-list");
 
-        const nameList = document.createElement("div");
-        nameList.classList.add("name-list");
+    const header = document.createElement("div");
+    header.innerHTML = `
+      <p><strong>App Owner:</strong> ${latestData.app_owner || "N/A"}</p>
+      <p><strong>App Support DL:</strong> ${latestData.app_support_dl || "N/A"}</p>
+      <p><strong>Total Forms:</strong> ${namesData.length}</p>
+      <hr />
+    `;
+    nameList.appendChild(header);
 
-        const header = document.createElement("div");
-        header.innerHTML = `
-          <p><strong>App Owner:</strong> ${latestData.app_owner || "N/A"}</p>
-          <p><strong>App Support DL:</strong> ${latestData.app_support_dl || "N/A"}</p>
-          <p><strong>Total Forms:</strong> ${namesData.length}</p>
-          <hr />
-        `;
-        nameList.appendChild(header);
+    namesData.forEach(row => {
+      const item = document.createElement("div");
+      item.innerHTML = `<a href="#" onclick="fetchDetails(${row.id})">${row.name}</a>`;
+      nameList.appendChild(item);
+    });
 
-        namesData.forEach(row => {
-          const item = document.createElement("div");
-          item.innerHTML = `<a href="#" onclick="fetchDetails(${row.id})">${row.name}</a>`;
-          nameList.appendChild(item);
-        });
+    wrapper.appendChild(nameList);
+    toggleIcon.innerHTML = `<i data-lucide="chevron-down"></i>`;
+    lucide.createIcons();
+  } catch (err) {
+    console.error("Error fetching names:", err);
+  }
+}
 
-        wrapper.appendChild(nameList);
-        toggleIcon.innerHTML = `<i data-lucide="chevron-down"></i>`;
-        lucide.createIcons();
-      } catch (err) {
-        console.error("Error fetching names:", err);
-      }
-    }
+async function fetchDetails(id) {
+  try {
+    const res = await fetch(`${BASE_URL}/get-data/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      mode: "cors"
+    });
 
-    async function fetchDetails(id) {
-      try {
-        const res = await fetch(`${BASE_URL}/get-data/${id}`);
-        const data = await res.json();
+    const data = await res.json();
 
-        const detailsDiv = document.getElementById("formDetails");
-        detailsDiv.innerHTML = `
-          <h2>Form Details</h2>
-          <p><strong>Application Workspace:</strong> ${data.application_directory}</p>
-          <p><strong>App Owner:</strong> ${data.app_owner}</p>
-          <p><strong>App Support DL:</strong> ${data.app_support_dl}</p>
-          <p><strong>Flow Name:</strong> ${data.name}</p>
-          <p><strong>Requested by (Email):</strong> ${data.email}</p>
-          <p><strong>Comments:</strong> ${data.message}</p>
-          <button onclick="downloadFormData(${id})" class="download-btn">Download JSON</button>
-        `;
-      } catch (err) {
-        console.error("Error fetching form details:", err);
-      }
-    }
+    const detailsDiv = document.getElementById("formDetails");
+    detailsDiv.innerHTML = `
+      <h2>Form Details</h2>
+      <p><strong>Application Workspace:</strong> ${data.application_directory}</p>
+      <p><strong>App Owner:</strong> ${data.app_owner}</p>
+      <p><strong>App Support DL:</strong> ${data.app_support_dl}</p>
+      <p><strong>Flow Name:</strong> ${data.name}</p>
+      <p><strong>Requested by (Email):</strong> ${data.email}</p>
+      <p><strong>Comments:</strong> ${data.message}</p>
+      <button onclick="downloadFormData(${id})" class="download-btn">Download JSON</button>
+    `;
+  } catch (err) {
+    console.error("Error fetching form details:", err);
+  }
+}
 
-    async function downloadFormData(id) {
-      try {
-        const res = await fetch(`${BASE_URL}/get-data/${id}`);
-        const data = await res.json();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `form_data_${id}.json`;
-        a.click();
-      } catch (err) {
-        console.error("Download error:", err);
-      }
-    }
+async function downloadFormData(id) {
+  try {
+    const res = await fetch(`${BASE_URL}/get-data/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      mode: "cors"
+    });
+
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `form_data_${id}.json`;
+    a.click();
+  } catch (err) {
+    console.error("Download error:", err);
+  }
+}
   </script>
 </body>
 </html>
