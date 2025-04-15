@@ -167,8 +167,14 @@ async function fetchDetails(id) {
 
     const data = await res.json();
 
-    const detailsDiv = document.getElementById("formDetails");
-    detailsDiv.innerHTML = `
+let fileHtml = "";
+if (data.file && data.file.url) {
+  fileHtml = `<p><strong>Attachment:</strong> 
+    <a href="${BASE_URL}${data.file.url}" target="_blank" download>
+      ${data.file.filename}
+    </a></p>`;
+}  
+    document.getElementById("formDetails").innerHTML = `
       <h2>Form Details</h2>
       <p><strong>Application Workspace:</strong> ${data.application_directory}</p>
       <p><strong>App Owner:</strong> ${data.app_owner}</p>
@@ -176,12 +182,14 @@ async function fetchDetails(id) {
       <p><strong>Flow Name:</strong> ${data.name}</p>
       <p><strong>Requested by (Email):</strong> ${data.email}</p>
       <p><strong>Comments:</strong> ${data.message}</p>
-      <button onclick="downloadFormData(${id})" class="download-btn">Download JSON</button>
+	  ${fileHtml}
+      <button onclick="downloadFormData(${id})" class="download-btn">Download Form Data</button>
     `;
   } catch (err) {
     console.error("Error fetching form details:", err);
   }
 }
+    
 
 async function downloadFormData(id) {
   try {
