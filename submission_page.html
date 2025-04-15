@@ -88,23 +88,37 @@ document.addEventListener("DOMContentLoaded", async function () {
         ? document.getElementById("customDirectory").value.trim()
         : document.getElementById("application_directory").value;
 
-    const formData = {
-        application_directory,
-        app_owner: document.getElementById("app_owner").value,
-        app_support_dl: document.getElementById("app_support_dl").value,
-        name: document.getElementById("name").value,
-        email: document.getElementById("email").value,
-        message: document.getElementById("message").value
-    };
+//    const formData = {
+//        application_directory,
+//        app_owner: document.getElementById("app_owner").value,
+//        app_support_dl: document.getElementById("app_support_dl").value,
+//        name: document.getElementById("name").value,
+//        email: document.getElementById("email").value,
+//        message: document.getElementById("message").value
+//    };
+
+const formDataToSend = new FormData();
+formDataToSend.append("application_directory", application_directory);
+formDataToSend.append("app_owner", document.getElementById("app_owner").value);
+formDataToSend.append("app_support_dl", document.getElementById("app_support_dl").value);
+formDataToSend.append("name", document.getElementById("name").value);
+formDataToSend.append("email", document.getElementById("email").value);
+formDataToSend.append("message", document.getElementById("message").value);
+
+const fileInput = document.getElementById("attachment");
+if (fileInput.files.length > 0) {
+    formDataToSend.append("attachment", fileInput.files[0]);
+}
 
         try {
             const response = await fetch(`${BASE_URL}/submit-form`, {
   method: "POST",
+  body: formDataToSend,
   headers: {
-    "Content-Type": "application/json",
+//    "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true"
   },
-  body: JSON.stringify(formData),
+//  body: JSON.stringify(formData),
   mode: "cors"
 });
             const result = await response.json();
