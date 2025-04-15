@@ -86,15 +86,21 @@ async function showDetails(id) {
 
     const data = await response.json();
 
-    document.getElementById("popupContent").innerHTML = `
-      <p><strong>Application Workspace:</strong> ${data.application_directory || "N/A"}</p>
-      <p><strong>App Owner:</strong> ${data.app_owner || "N/A"}</p>
-      <p><strong>Support DL:</strong> ${data.app_support_dl || "N/A"}</p>
-      <p><strong>Flow Name:</strong> ${data.name}</p>
-      <p><strong>Requested by:</strong> ${data.email}</p>
-      <p><strong>Comments:</strong> ${data.message || "N/A"}</p>
-      <input type="hidden" id="currentId" value="${data.id}">
-    `;
+let fileHtml = "";
+if (data.file && data.file.filepath) {
+  fileHtml = `<p><strong>Attachment:</strong> <a href="${BASE_URL}${data.file.filepath}" target="_blank">${data.file.originalname || "Download File"}</a></p>`;
+}
+
+document.getElementById("popupContent").innerHTML = `
+  <p><strong>Application Workspace:</strong> ${data.application_directory || "N/A"}</p>
+  <p><strong>App Owner:</strong> ${data.app_owner || "N/A"}</p>
+  <p><strong>Support DL:</strong> ${data.app_support_dl || "N/A"}</p>
+  <p><strong>Flow Name:</strong> ${data.name}</p>
+  <p><strong>Requested by:</strong> ${data.email}</p>
+  <p><strong>Comments:</strong> ${data.message || "N/A"}</p>
+  ${fileHtml}
+  <input type="hidden" id="currentId" value="${data.id}">
+`;
 
     document.getElementById("actionButtons").style.display = "block";
 
