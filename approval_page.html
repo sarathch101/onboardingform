@@ -87,9 +87,12 @@ async function showDetails(id) {
     const data = await response.json();
 
 let fileHtml = "";
-if (data.file && data.file.filepath) {
-  fileHtml = `<p><strong>Attachment:</strong> <a href="${BASE_URL}${data.file.filepath}" target="_blank">${data.file.originalname || "Download File"}</a></p>`;
-}
+if (data.file && data.file.url) {
+  fileHtml = `<p><strong>Attachment:</strong> 
+    <a href="${BASE_URL}${data.file.url}" target="_blank" download>
+      ${data.file.filename}
+    </a></p>`;
+}  
 
 document.getElementById("popupContent").innerHTML = `
   <p><strong>Application Workspace:</strong> ${data.application_directory || "N/A"}</p>
@@ -101,7 +104,7 @@ document.getElementById("popupContent").innerHTML = `
   ${fileHtml}
   <input type="hidden" id="currentId" value="${data.id}">
 `;
-
+  
     document.getElementById("actionButtons").style.display = "block";
 
   } catch (error) {
