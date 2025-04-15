@@ -248,8 +248,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 			  "ngrok-skip-browser-warning": "true"
 			  },
 			  mode: "cors"
-			}
-			;
+			});
+
             if (!response.ok) {
                 throw new Error(`Server returned ${response.status}`);
             }
